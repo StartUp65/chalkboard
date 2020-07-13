@@ -4,11 +4,16 @@
       <i class="play blue icon"></i>
       Play Live
     </button>
-    <button class="ui disabled button">
+    <button class="ui button"
+      (click)="getRecording()">
       <i class="video red icon"></i>
       Play Recording
     </button>
   </div>
+</div>
+<div class="ui success message"
+  *ngIf="showRecordingComplete">
+  End of Recording
 </div>
 <div class="ui piled centered segment">
   <canvas #canvas></canvas>

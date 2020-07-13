@@ -1,22 +1,31 @@
 import { Cords } from './../../../shared/models/cords.model';
-import { Component, ViewChild, ElementRef, Input, AfterViewInit } from '@angular/core';
+import {
+  Component,
+  ViewChild,
+  ElementRef,
+  Input,
+  AfterViewInit,
+} from '@angular/core';
 
-import { SharedService } from '../../../shared/services/shared.service'
+import { SharedService } from '../../../shared/services/shared.service';
+import { interval } from 'rxjs';
 @Component({
   selector: 'startup65-output-container',
   templateUrl: './output-container.component.html',
-  styleUrls: ['./output-container.component.scss']
+  styleUrls: ['./output-container.component.scss'],
 })
 export class OutputContainerComponent implements AfterViewInit {
-
   @ViewChild('canvas') public canvas: ElementRef;
 
-  @Input() public width = 800;
-  @Input() public height = 400;
+  width = 800;
+  height = 400;
+  savedRecording: any[] = [];
+  savedRecordingIndex: number = 0;
+  showRecordingComplete: boolean = false;
+  cx: CanvasRenderingContext2D;
+  recordingSub$: any;
 
-  private cx: CanvasRenderingContext2D;
-
-  constructor(private sharedService: SharedService) { }
+  constructor(private sharedService: SharedService) {}
 
   ngAfterViewInit(): void {
     const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
@@ -33,13 +42,14 @@ export class OutputContainerComponent implements AfterViewInit {
       next: (cords: Cords) => {
         const rect = this.canvas.nativeElement.getBoundingClientRect();
         this.drawOnCanvas(cords);
-      }
+      },
     });
-
   }
 
-  private drawOnCanvas(currentPos: { x: number, y: number }) {
-    if (!this.cx) { return; }
+  private drawOnCanvas(currentPos: { x: number; y: number }) {
+    if (!this.cx) {
+      return;
+    }
     this.cx.beginPath();
     if (currentPos) {
       this.cx.clearRect(0, 0, this.width, this.height);
@@ -48,4 +58,31 @@ export class OutputContainerComponent implements AfterViewInit {
     }
   }
 
+  public getRecording(): void {
+    this.sharedService.getChalkboardRecording().subscribe({
+      next: (recording: any): void => {
+        this.savedRecording = recording['cords'];
+        this.playSavedRecording();
+      },
+    });
+  }
+
+  private playSavedRecording(): void {
+    this.recordingSub$ = interval(100).subscribe({
+      next: (): void => {
+        if (this.savedRecordingIndex < this.savedRecording.length) {
+          this.drawOnCanvas(this.savedRecording[this.savedRecordingIndex]);
+          this.savedRecordingIndex++;
+        }
+        if (this.savedRecordingIndex === this.savedRecording.length) {
+          this.endRecordingPlay();
+        }
+      },
+    });
+  }
+
+  private endRecordingPlay(): void {
+    this.recordingSub$.unsubscribe();
+    this.showRecordingComplete = true;
+  }
 }
