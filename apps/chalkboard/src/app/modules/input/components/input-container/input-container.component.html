@@ -1,34 +1,26 @@
 <div class="ui raised segment">
   <div class="ui buttons">
-    <button
-      class="ui button"
+    <button class="ui button"
       *ngIf="pageState === pageStateEnum.INIT"
-      (click)="startLiveRecording()"
-    >
+      (click)="startLiveRecording()">
       <i class="play green icon"></i>
       Go Live
     </button>
-    <button
-      class="ui button"
+    <button class="ui button"
       *ngIf="pageState === pageStateEnum.LIVE"
-      (click)="stopLiveRecording()"
-    >
+      (click)="stopLiveRecording()">
       <i class="stop red icon"></i>
       Stop live
     </button>
-    <button
-      class="ui button"
+    <button class="ui button"
       *ngIf="pageState === pageStateEnum.INIT"
-      (click)="startRecording()"
-    >
+      (click)="startRecording()">
       <i class="video blue icon"></i>
       Record
     </button>
-    <button
-      class="ui button"
+    <button class="ui button"
       *ngIf="pageState === pageStateEnum.RECORDING"
-      (click)="stopRecording()"
-    >
+      (click)="stopRecording()">
       <i class="video blue icon"></i>
       Stop Recording
     </button>

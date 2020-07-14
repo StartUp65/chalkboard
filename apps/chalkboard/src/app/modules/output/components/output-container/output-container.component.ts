@@ -1,14 +1,14 @@
-import { Cords } from './../../../shared/models/cords.model';
-import {
-  Component,
-  ViewChild,
-  ElementRef,
-  Input,
-  AfterViewInit,
-} from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { interval } from 'rxjs';
 
 import { SharedService } from '../../../shared/services/shared.service';
-import { interval } from 'rxjs';
+import { Cords } from './../../../shared/models/cords.model';
+
+enum PageState {
+  INIT,
+  LIVE,
+  RECORDING,
+}
 @Component({
   selector: 'startup65-output-container',
   templateUrl: './output-container.component.html',
@@ -19,11 +19,15 @@ export class OutputContainerComponent implements AfterViewInit {
 
   width = 800;
   height = 400;
+  pageStateEnum: typeof PageState = PageState;
+  pageState: PageState = this.pageStateEnum.INIT;
+
   savedRecording: any[] = [];
   savedRecordingIndex: number = 0;
   showRecordingComplete: boolean = false;
   cx: CanvasRenderingContext2D;
   recordingSub$: any;
+  livePlaySub$: any;
 
   constructor(private sharedService: SharedService) {}
 
@@ -37,16 +41,9 @@ export class OutputContainerComponent implements AfterViewInit {
     this.cx.lineWidth = 15;
     this.cx.lineCap = 'round';
     this.cx.strokeStyle = '#800000';
-
-    this.sharedService.getChalkboardCords().subscribe({
-      next: (cords: Cords) => {
-        const rect = this.canvas.nativeElement.getBoundingClientRect();
-        this.drawOnCanvas(cords);
-      },
-    });
   }
 
-  private drawOnCanvas(currentPos: { x: number; y: number }) {
+  private drawOnCanvas(currentPos: { x: number; y: number }): void {
     if (!this.cx) {
       return;
     }
@@ -58,9 +55,32 @@ export class OutputContainerComponent implements AfterViewInit {
     }
   }
 
+  public startLivePlay(): void {
+    this.pageState = this.pageStateEnum.LIVE;
+    this.showRecordingComplete = false;
+    this.endRecordingPlay();
+    this.livePlaySub$ = this.sharedService.getChalkboardCords().subscribe({
+      next: (cords: Cords) => {
+        this.drawOnCanvas(cords);
+      },
+    });
+  }
+
+  public stopLivePlay(): void {
+    if (this.livePlaySub$) {
+      this.livePlaySub$.unsubscribe();
+    }
+    if (this.pageState === this.pageStateEnum.LIVE) {
+      this.pageState = this.pageStateEnum.INIT;
+    }
+  }
+
   public getRecording(): void {
+    this.pageState = this.pageStateEnum.RECORDING;
+    this.stopLivePlay();
     this.sharedService.getChalkboardRecording().subscribe({
       next: (recording: any): void => {
+        this.savedRecordingIndex = 0;
         this.savedRecording = recording['cords'];
         this.playSavedRecording();
       },
@@ -68,6 +88,7 @@ export class OutputContainerComponent implements AfterViewInit {
   }
 
   private playSavedRecording(): void {
+    this.showRecordingComplete = false;
     this.recordingSub$ = interval(100).subscribe({
       next: (): void => {
         if (this.savedRecordingIndex < this.savedRecording.length) {
@@ -76,13 +97,20 @@ export class OutputContainerComponent implements AfterViewInit {
         }
         if (this.savedRecordingIndex === this.savedRecording.length) {
           this.endRecordingPlay();
+          this.showRecordingComplete = true;
         }
       },
     });
   }
 
   private endRecordingPlay(): void {
-    this.recordingSub$.unsubscribe();
-    this.showRecordingComplete = true;
+    if (this.recordingSub$) {
+      this.recordingSub$.unsubscribe();
+    }
+
+    if (this.pageState === this.pageStateEnum.RECORDING) {
+      this.pageState = this.pageStateEnum.INIT;
+    }
+    this.cx.clearRect(0, 0, this.width, this.height);
   }
 }

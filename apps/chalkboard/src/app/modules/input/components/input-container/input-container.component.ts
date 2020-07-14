@@ -43,7 +43,7 @@ export class InputContainerComponent implements AfterViewInit {
     this.captureEvents(canvasEl);
   }
 
-  private captureEvents(canvasEl: HTMLCanvasElement) {
+  private captureEvents(canvasEl: HTMLCanvasElement): void {
     fromEvent(canvasEl, 'mousemove')
       .pipe(throttleTime(100))
       .subscribe((res: MouseEvent) => {
@@ -56,7 +56,7 @@ export class InputContainerComponent implements AfterViewInit {
       });
   }
 
-  private drawOnCanvas(currentPos: { x: number; y: number }) {
+  private drawOnCanvas(currentPos: { x: number; y: number }): void {
     if (!this.cx) {
       return;
     }
@@ -100,7 +100,6 @@ export class InputContainerComponent implements AfterViewInit {
   public stopRecording(): void {
     this.recordSub$.unsubscribe();
     this.pageState = this.pageStateEnum.INIT;
-    console.log(this.recording);
     this.sharedService.setChalkboardRecording(this.recording);
   }
 }
